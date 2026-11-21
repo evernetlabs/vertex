@@ -6,10 +6,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/evernetlabs/vertex/internal/app/vertex/admin"
 	"github.com/evernetlabs/vertex/internal/app/vertex/auth"
 	"github.com/evernetlabs/vertex/internal/app/vertex/config"
 	"github.com/evernetlabs/vertex/internal/app/vertex/health"
 	"github.com/evernetlabs/vertex/internal/app/vertex/vertex"
+	"github.com/evernetlabs/vertex/internal/pkg/exception"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -53,14 +55,19 @@ func (s *Server) Start() {
 
 	mongoDatabase := mongoClient.Database(s.config.MongoDatabase)
 	configsCollection := mongoDatabase.Collection("configs")
+	adminsCollection := mongoDatabase.Collection("admins")
 
 	router := gin.Default()
+	router.Use(gin.Recovery())
+	router.Use(exception.ErrorHandler())
 
 	configManager := config.NewManager(configsCollection)
 	authenticator := auth.NewAuthenticator(configManager)
+	adminManager := admin.NewManager(adminsCollection, configManager)
 
 	health.NewHandler(router).Register()
 	vertex.NewHandler(router, authenticator, configManager).Register()
+	admin.NewHandler(router, authenticator, adminManager).Register()
 
 	err = router.Run(fmt.Sprintf("%s:%s", s.config.Host, s.config.Port))
 
