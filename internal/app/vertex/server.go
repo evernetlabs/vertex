@@ -6,7 +6,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/evernetlabs/vertex/internal/app/vertex/auth"
+	"github.com/evernetlabs/vertex/internal/app/vertex/config"
 	"github.com/evernetlabs/vertex/internal/app/vertex/health"
+	"github.com/evernetlabs/vertex/internal/app/vertex/vertex"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -48,11 +51,16 @@ func (s *Server) Start() {
 		log.Fatal("error connecting to mongodb: ", err)
 	}
 
-	mongoClient.Database(s.config.MongoDatabase)
+	mongoDatabase := mongoClient.Database(s.config.MongoDatabase)
+	configsCollection := mongoDatabase.Collection("configs")
 
 	router := gin.Default()
 
+	configManager := config.NewManager(configsCollection)
+	authenticator := auth.NewAuthenticator(configManager)
+
 	health.NewHandler(router).Register()
+	vertex.NewHandler(router, authenticator, configManager).Register()
 
 	err = router.Run(fmt.Sprintf("%s:%s", s.config.Host, s.config.Port))
 
