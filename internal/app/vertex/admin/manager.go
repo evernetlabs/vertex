@@ -12,6 +12,7 @@ import (
 	"github.com/evernetlabs/vertex/internal/pkg/secret"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -137,6 +138,113 @@ func (m *Manager) ChangePassword(ctx context.Context, username string, request *
 	}
 
 	if result.MatchedCount == 0 {
+		return &exception.NotFoundError{Message: fmt.Sprintf("admin %s not found", username)}
+	}
+
+	return nil
+}
+
+func (m *Manager) Add(ctx context.Context, request *AdditionRequest, creator string) (*AdditionResponse, error) {
+	count, err := m.collection.CountDocuments(ctx, bson.M{"username": request.Username})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if count > 0 {
+		return nil, &exception.ClientError{Message: fmt.Sprintf("admin %s already exists", request.Username)}
+	}
+
+	password, err := secret.GenerateSecret(12)
+
+	if err != nil {
+		return nil, err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	if err != nil {
+		return nil, err
+	}
+
+	admin := &Admin{
+		ID:        bson.NewObjectID(),
+		Username:  request.Username,
+		Password:  string(hashedPassword),
+		Creator:   creator,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+
+	_, err = m.collection.InsertOne(ctx, admin)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &AdditionResponse{Password: password, Admin: admin}, nil
+}
+
+func (m *Manager) List(ctx context.Context, page int64, size int64) ([]*Admin, error) {
+	admins := make([]*Admin, 0)
+
+	cur, err := m.collection.Find(ctx, bson.M{}, options.Find().SetSkip(page*size).SetLimit(size))
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = cur.All(ctx, &admins)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return admins, nil
+}
+
+func (m *Manager) ResetPassword(ctx context.Context, username string) (*PasswordResetResponse, error) {
+
+	password, err := secret.GenerateSecret(12)
+
+	if err != nil {
+		return nil, err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	if err != nil {
+		return nil, err
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"password":   string(hashedPassword),
+			"updated_at": time.Now().UTC(),
+		},
+	}
+
+	result, err := m.collection.UpdateOne(ctx, bson.M{"username": username}, update)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result.MatchedCount == 0 {
+		return nil, &exception.NotFoundError{Message: fmt.Sprintf("admin %s not found", username)}
+	}
+
+	return &PasswordResetResponse{Password: password}, nil
+}
+
+func (m *Manager) Delete(ctx context.Context, username string) error {
+	result, err := m.collection.DeleteOne(ctx, bson.M{"username": username})
+
+	if err != nil {
+		return err
+	}
+
+	if result.DeletedCount == 0 {
 		return &exception.NotFoundError{Message: fmt.Sprintf("admin %s not found", username)}
 	}
 

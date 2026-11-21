@@ -24,3 +24,12 @@ type PasswordChangeRequest struct {
 type AdditionRequest struct {
 	Username string `json:"username" binding:"required"`
 }
+
+type AdditionResponse struct {
+	Password string `json:"password"`
+	Admin    *Admin `json:"admin"`
+}
+
+type PasswordResetResponse struct {
+	Password string `json:"password"`
+}
