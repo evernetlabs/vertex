@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -24,9 +25,9 @@ const (
 	TokenTypeAdmin = "user"
 )
 
-func (a *Authenticator) GenerateAdminToken(username string) (string, error) {
-	vertexEndpoint := a.configManager.GetVertexEndpoint()
-	jwtSigningKey := a.configManager.GetJwtSigningKey()
+func (a *Authenticator) GenerateAdminToken(ctx context.Context, username string) (string, error) {
+	vertexEndpoint := a.configManager.GetVertexEndpoint(ctx)
+	jwtSigningKey := a.configManager.GetJwtSigningKey(ctx)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  username,
@@ -46,7 +47,7 @@ func (a *Authenticator) GenerateAdminToken(username string) (string, error) {
 	return tokenString, nil
 }
 
-func (a *Authenticator) ValidateAdminContext(c *gin.Context) (*AuthenticatedAdmin, error) {
+func (a *Authenticator) ValidateAdminContext(ctx context.Context, c *gin.Context) (*AuthenticatedAdmin, error) {
 	tokenType, token, err := a.extractToken(c)
 
 	if err != nil {
@@ -55,15 +56,15 @@ func (a *Authenticator) ValidateAdminContext(c *gin.Context) (*AuthenticatedAdmi
 
 	switch tokenType {
 	case BearerToken:
-		return a.validateAdminToken(token)
+		return a.validateAdminToken(ctx, token)
 	default:
 		return nil, fmt.Errorf("invalid token type")
 	}
 }
 
-func (a *Authenticator) validateAdminToken(tokenString string) (*AuthenticatedAdmin, error) {
+func (a *Authenticator) validateAdminToken(ctx context.Context, tokenString string) (*AuthenticatedAdmin, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(a.configManager.GetJwtSigningKey()), nil
+		return []byte(a.configManager.GetJwtSigningKey(ctx)), nil
 	})
 
 	if err != nil {
