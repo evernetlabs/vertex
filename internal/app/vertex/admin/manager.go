@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/evernetlabs/vertex/internal/app/vertex/auth"
@@ -97,4 +98,47 @@ func (m *Manager) GetToken(ctx context.Context, request *TokenRequest) (*TokenRe
 	}
 
 	return &TokenResponse{Token: token}, nil
+}
+
+func (m *Manager) Get(ctx context.Context, username string) (*Admin, error) {
+	admin := &Admin{}
+
+	err := m.collection.FindOne(ctx, bson.M{"username": username}).Decode(admin)
+
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, &exception.NotFoundError{Message: fmt.Sprintf("admin %s not found", username)}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return admin, nil
+}
+
+func (m *Manager) ChangePassword(ctx context.Context, username string, request *PasswordChangeRequest) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+
+	if err != nil {
+		return err
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"password":   string(hashedPassword),
+			"updated_at": time.Now().UTC(),
+		},
+	}
+
+	result, err := m.collection.UpdateOne(ctx, bson.M{"username": username}, update)
+
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return &exception.NotFoundError{Message: fmt.Sprintf("admin %s not found", username)}
+	}
+
+	return nil
 }
