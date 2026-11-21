@@ -22,7 +22,7 @@ func NewAuthenticator(configManager *config.Manager) *Authenticator {
 
 const (
 	BearerToken    = "Bearer"
-	TokenTypeAdmin = "user"
+	TokenTypeAdmin = "admin"
 )
 
 func (a *Authenticator) GenerateAdminToken(ctx context.Context, username string) (string, error) {

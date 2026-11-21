@@ -42,4 +42,25 @@ func (h *Handler) Register() {
 
 		c.JSON(http.StatusCreated, admin)
 	})
+
+	h.router.POST("/api/v1/admins/token", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, 5*time.Second)
+		defer cancel()
+
+		var req TokenRequest
+
+		if err := c.ShouldBindJSON(&req); err != nil {
+			_ = c.Error(&exception.ClientError{Message: err.Error()})
+			return
+		}
+
+		token, err := h.manager.GetToken(ctx, &req)
+
+		if err != nil {
+			_ = c.Error(err)
+			return
+		}
+
+		c.JSON(http.StatusOK, token)
+	})
 }

@@ -63,7 +63,7 @@ func (s *Server) Start() {
 
 	configManager := config.NewManager(configsCollection)
 	authenticator := auth.NewAuthenticator(configManager)
-	adminManager := admin.NewManager(adminsCollection, configManager)
+	adminManager := admin.NewManager(adminsCollection, configManager, authenticator)
 
 	health.NewHandler(router).Register()
 	vertex.NewHandler(router, authenticator, configManager).Register()

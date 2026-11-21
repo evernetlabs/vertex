@@ -2,8 +2,10 @@ package admin
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/evernetlabs/vertex/internal/app/vertex/auth"
 	"github.com/evernetlabs/vertex/internal/app/vertex/config"
 	"github.com/evernetlabs/vertex/internal/pkg/exception"
 	"github.com/evernetlabs/vertex/internal/pkg/secret"
@@ -15,10 +17,11 @@ import (
 type Manager struct {
 	collection    *mongo.Collection
 	configManager *config.Manager
+	authenticator *auth.Authenticator
 }
 
-func NewManager(collection *mongo.Collection, configManager *config.Manager) *Manager {
-	return &Manager{collection: collection, configManager: configManager}
+func NewManager(collection *mongo.Collection, configManager *config.Manager, authenticator *auth.Authenticator) *Manager {
+	return &Manager{collection: collection, configManager: configManager, authenticator: authenticator}
 }
 
 func (m *Manager) Init(ctx context.Context, request *InitRequest) (*Admin, error) {
@@ -66,4 +69,32 @@ func (m *Manager) Init(ctx context.Context, request *InitRequest) (*Admin, error
 	}
 
 	return admin, nil
+}
+
+func (m *Manager) GetToken(ctx context.Context, request *TokenRequest) (*TokenResponse, error) {
+	admin := &Admin{}
+
+	err := m.collection.FindOne(ctx, bson.M{"username": request.Username}).Decode(admin)
+
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, &exception.AuthenticationError{Message: "invalid username and password combination"}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(request.Password))
+
+	if err != nil {
+		return nil, &exception.AuthenticationError{Message: "invalid username and password combination"}
+	}
+
+	token, err := m.authenticator.GenerateAdminToken(ctx, admin.Username)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &TokenResponse{Token: token}, nil
 }
