@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/evernetlabs/vertex/internal/app/vertex/health"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -50,6 +51,8 @@ func (s *Server) Start() {
 	mongoClient.Database(s.config.MongoDatabase)
 
 	router := gin.Default()
+
+	health.NewHandler(router).Register()
 
 	err = router.Run(fmt.Sprintf("%s:%s", s.config.Host, s.config.Port))
 
