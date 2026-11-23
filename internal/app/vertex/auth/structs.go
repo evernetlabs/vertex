@@ -7,3 +7,8 @@ type AuthenticatedAdmin struct {
 type AuthenticatedAccount struct {
 	Username string `json:"username"`
 }
+
+type AuthenticatedProfile struct {
+	Handle          string `json:"handle"`
+	AccountUsername string `json:"account_username"`
+}

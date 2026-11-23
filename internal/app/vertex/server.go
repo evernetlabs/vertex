@@ -11,6 +11,7 @@ import (
 	"github.com/evernetlabs/vertex/internal/app/vertex/auth"
 	"github.com/evernetlabs/vertex/internal/app/vertex/config"
 	"github.com/evernetlabs/vertex/internal/app/vertex/health"
+	"github.com/evernetlabs/vertex/internal/app/vertex/profile"
 	"github.com/evernetlabs/vertex/internal/app/vertex/vertex"
 	"github.com/evernetlabs/vertex/internal/pkg/exception"
 	"github.com/gin-gonic/gin"
@@ -58,6 +59,7 @@ func (s *Server) Start() {
 	configsCollection := mongoDatabase.Collection("configs")
 	adminsCollection := mongoDatabase.Collection("admins")
 	accountsCollection := mongoDatabase.Collection("accounts")
+	profilesCollection := mongoDatabase.Collection("profiles")
 
 	router := gin.Default()
 	router.Use(gin.Recovery())
@@ -67,11 +69,13 @@ func (s *Server) Start() {
 	authenticator := auth.NewAuthenticator(configManager)
 	adminManager := admin.NewManager(adminsCollection, configManager, authenticator)
 	accountManager := account.NewManager(accountsCollection, authenticator)
+	profileManager := profile.NewManager(profilesCollection, authenticator)
 
 	health.NewHandler(router).Register()
 	vertex.NewHandler(router, authenticator, configManager).Register()
 	admin.NewHandler(router, authenticator, adminManager).Register()
 	account.NewHandler(router, authenticator, accountManager).Register()
+	profile.NewHandler(router, authenticator, profileManager).Register()
 
 	err = router.Run(fmt.Sprintf("%s:%s", s.config.Host, s.config.Port))
 
