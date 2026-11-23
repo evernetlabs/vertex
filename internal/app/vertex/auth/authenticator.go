@@ -21,8 +21,9 @@ func NewAuthenticator(configManager *config.Manager) *Authenticator {
 }
 
 const (
-	BearerToken    = "Bearer"
-	TokenTypeAdmin = "admin"
+	BearerToken      = "Bearer"
+	TokenTypeAdmin   = "admin"
+	TokenTypeAccount = "account"
 )
 
 func (a *Authenticator) GenerateAdminToken(ctx context.Context, username string) (string, error) {
@@ -109,6 +110,99 @@ func (a *Authenticator) validateAdminToken(ctx context.Context, tokenString stri
 		}
 
 		return &AuthenticatedAdmin{
+			Username: usernameString,
+		}, nil
+	} else {
+		return nil, &exception.AuthenticationError{
+			Message: "invalid access token",
+		}
+	}
+}
+
+func (a *Authenticator) GenerateAccountToken(ctx context.Context, username string) (string, error) {
+	vertexEndpoint := a.configManager.GetVertexEndpoint(ctx)
+	jwtSigningKey := a.configManager.GetJwtSigningKey(ctx)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":  username,
+		"iss":  vertexEndpoint,
+		"aud":  vertexEndpoint,
+		"type": TokenTypeAccount,
+		"iat":  int(time.Now().Unix()),
+		"exp":  int(time.Now().Add(time.Hour * 24).Unix()),
+	})
+
+	tokenString, err := token.SignedString([]byte(jwtSigningKey))
+
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func (a *Authenticator) ValidateAccountContext(ctx context.Context, c *gin.Context) (*AuthenticatedAccount, error) {
+	tokenType, token, err := a.extractToken(c)
+
+	if err != nil {
+		return nil, err
+	}
+
+	switch tokenType {
+	case BearerToken:
+		return a.validateAccountToken(ctx, token)
+	default:
+		return nil, fmt.Errorf("invalid token type")
+	}
+}
+
+func (a *Authenticator) validateAccountToken(ctx context.Context, tokenString string) (*AuthenticatedAccount, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(a.configManager.GetJwtSigningKey(ctx)), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		tokenType, ok := claims["type"]
+		if !ok {
+			return nil, &exception.AuthenticationError{
+				Message: "invalid token type",
+			}
+		}
+
+		tokenTypeString, ok := tokenType.(string)
+		if !ok {
+			return nil, &exception.AuthenticationError{
+				Message: "invalid token type",
+			}
+		}
+
+		if tokenTypeString != TokenTypeAccount {
+			return nil, &exception.AuthenticationError{
+				Message: "invalid token type",
+			}
+		}
+
+		username, ok := claims["sub"]
+
+		if !ok {
+			return nil, &exception.AuthenticationError{
+				Message: "invalid access token",
+			}
+		}
+
+		usernameString, ok := username.(string)
+
+		if !ok {
+			return nil, &exception.AuthenticationError{
+				Message: "invalid access token",
+			}
+		}
+
+		return &AuthenticatedAccount{
 			Username: usernameString,
 		}, nil
 	} else {

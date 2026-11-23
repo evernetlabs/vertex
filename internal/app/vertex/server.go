@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/evernetlabs/vertex/internal/app/vertex/account"
 	"github.com/evernetlabs/vertex/internal/app/vertex/admin"
 	"github.com/evernetlabs/vertex/internal/app/vertex/auth"
 	"github.com/evernetlabs/vertex/internal/app/vertex/config"
@@ -56,6 +57,7 @@ func (s *Server) Start() {
 	mongoDatabase := mongoClient.Database(s.config.MongoDatabase)
 	configsCollection := mongoDatabase.Collection("configs")
 	adminsCollection := mongoDatabase.Collection("admins")
+	accountsCollection := mongoDatabase.Collection("accounts")
 
 	router := gin.Default()
 	router.Use(gin.Recovery())
@@ -64,10 +66,12 @@ func (s *Server) Start() {
 	configManager := config.NewManager(configsCollection)
 	authenticator := auth.NewAuthenticator(configManager)
 	adminManager := admin.NewManager(adminsCollection, configManager, authenticator)
+	accountManager := account.NewManager(accountsCollection, authenticator)
 
 	health.NewHandler(router).Register()
 	vertex.NewHandler(router, authenticator, configManager).Register()
 	admin.NewHandler(router, authenticator, adminManager).Register()
+	account.NewHandler(router, authenticator, accountManager).Register()
 
 	err = router.Run(fmt.Sprintf("%s:%s", s.config.Host, s.config.Port))
 
