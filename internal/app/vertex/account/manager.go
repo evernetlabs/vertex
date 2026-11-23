@@ -86,14 +86,63 @@ func (m *Manager) GetToken(ctx context.Context, request *TokenRequest) (*TokenRe
 	}, nil
 }
 
-func (m *Manager) Get() {
+func (m *Manager) Get(ctx context.Context, username string) (*Account, error) {
+	account := &Account{}
 
+	err := m.collection.FindOne(ctx, bson.M{
+		"username": username,
+	}).Decode(account)
+
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, &exception.NotFoundError{Message: fmt.Sprintf("account %s not found", username)}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return account, nil
 }
 
-func (m *Manager) ChangePassword() {
+func (m *Manager) ChangePassword(ctx context.Context, username string, request *PasswordChangeRequest) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 
+	if err != nil {
+		return err
+	}
+
+	res, err := m.collection.UpdateOne(ctx, bson.M{
+		"username": username,
+	}, bson.M{
+		"$set": bson.M{
+			"password":   string(hashedPassword),
+			"updated_at": time.Now().UTC(),
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount == 0 {
+		return &exception.NotFoundError{Message: fmt.Sprintf("account %s not found", username)}
+	}
+
+	return nil
 }
 
-func (m *Manager) Delete() {
+func (m *Manager) Delete(ctx context.Context, username string) error {
+	res, err := m.collection.DeleteOne(ctx, bson.M{
+		"username": username,
+	})
 
+	if err != nil {
+		return err
+	}
+
+	if res.DeletedCount == 0 {
+		return &exception.NotFoundError{Message: fmt.Sprintf("account %s not found", username)}
+	}
+
+	return nil
 }

@@ -63,4 +63,69 @@ func (h *Handler) Register() {
 
 		c.JSON(http.StatusOK, token)
 	})
+
+	h.router.GET("/api/v1/accounts/current", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, 5*time.Second)
+		defer cancel()
+
+		aa, err := h.authenticator.ValidateAccountContext(ctx, c)
+		if err != nil {
+			_ = c.Error(err)
+			return
+		}
+
+		account, err := h.manager.Get(ctx, aa.Username)
+
+		if err != nil {
+			_ = c.Error(err)
+			return
+		}
+
+		c.JSON(http.StatusOK, account)
+	})
+
+	h.router.PUT("/api/v1/accounts/current/password", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, 5*time.Second)
+		defer cancel()
+
+		aa, err := h.authenticator.ValidateAccountContext(ctx, c)
+		if err != nil {
+			_ = c.Error(err)
+			return
+		}
+
+		var req PasswordChangeRequest
+
+		if err := c.ShouldBindJSON(&req); err != nil {
+			_ = c.Error(&exception.ClientError{Message: err.Error()})
+			return
+		}
+
+		err = h.manager.ChangePassword(ctx, aa.Username, &req)
+		if err != nil {
+			_ = c.Error(err)
+			return
+		}
+
+		c.Status(http.StatusNoContent)
+	})
+
+	h.router.DELETE("/api/v1/accounts/current", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, 5*time.Second)
+		defer cancel()
+
+		aa, err := h.authenticator.ValidateAccountContext(ctx, c)
+		if err != nil {
+			_ = c.Error(err)
+			return
+		}
+
+		err = h.manager.Delete(ctx, aa.Username)
+		if err != nil {
+			_ = c.Error(err)
+			return
+		}
+
+		c.Status(http.StatusNoContent)
+	})
 }
