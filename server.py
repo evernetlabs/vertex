@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 
+from core.api.health_check_api import HealthCheckAPI
 from web import Web
 
 app = Flask(__name__)
@@ -20,6 +21,8 @@ db = pymongo.MongoClient(
 )[os.getenv("DB_NAME", "vertex")]
 
 Web(app).register()
+
+HealthCheckAPI(app).register()
 
 
 @app.before_request
