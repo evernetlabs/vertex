@@ -1,0 +1,54 @@
+<nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top shadow-sm">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center fw-bold fs-3" href="/">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">
+                <defs>
+                    <linearGradient id="evernet1" x1="3" y1="16" x2="29" y2="16">
+                        <stop stop-color="#06B6D4" offset=""/>
+                        <stop offset="0.5" stop-color="#3B82F6"/>
+                        <stop offset="1" stop-color="#8B5CF6"/>
+                    </linearGradient>
+                </defs>
+
+                <path d="M4 16C4 10 8 7 12 7C16 7 17.5 10.5 20 16C22.5 21.5 24 25 28 25C30 25 31 23 31 21"
+                      fill="none" stroke="url(#evernet1)" stroke-width="3" stroke-linecap="round"/>
+
+                <path d="M28 16C28 22 24 25 20 25C16 25 14.5 21.5 12 16C9.5 10.5 8 7 4 7C2 7 1 9 1 11"
+                      fill="none" stroke="url(#evernet1)" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <span style="margin-left: 1rem">Evernet</span>
+        </a>
+        <button aria-controls="navbar"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+                class="navbar-toggler"
+                data-bs-target="#navbar"
+                data-bs-toggle="collapse"
+                type="button">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="/use-cases">Use Cases</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="/docs">Documentation</a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center gap-2">
+                <a class="btn btn-link text-dark text-decoration-none px-3"
+                   href="/login">
+                    Sign In
+                </a>
+                <a class="btn btn-primary px-4"
+                   href="/join">
+                    Get Started
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>

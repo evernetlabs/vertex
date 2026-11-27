@@ -1,0 +1,66 @@
+<nav class="navbar navbar-expand-lg bg-light" data-bs-theme="light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+                <defs>
+                    <linearGradient id="evernet1" x1="3" y1="16" x2="29" y2="16">
+                        <stop stop-color="#06B6D4" offset=""/>
+                        <stop offset="0.5" stop-color="#3B82F6"/>
+                        <stop offset="1" stop-color="#8B5CF6"/>
+                    </linearGradient>
+                </defs>
+
+                <path
+                        d="M4 16
+       C4 10 8 7 12 7
+       C16 7 17.5 10.5 20 16
+       C22.5 21.5 24 25 28 25
+       C30 25 31 23 31 21"
+                        fill="none"
+                        stroke="url(#evernet1)"
+                        stroke-width="3"
+                        stroke-linecap="round"/>
+
+                <path
+                        d="M28 16
+       C28 22 24 25 20 25
+       C16 25 14.5 21.5 12 16
+       C9.5 10.5 8 7 4 7
+       C2 7 1 9 1 11"
+                        fill="none"
+                        stroke="url(#evernet1)"
+                        stroke-width="3"
+                        stroke-linecap="round"/>
+            </svg>
+        </a>
+        <button aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
+                data-bs-target="#navbar" data-bs-toggle="collapse" type="button">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/home">🏠 Home</a>
+                </li>
+            </ul>
+        </div>
+        <div class="d-flex justify-content-end">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item dropdown">
+                    <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle"
+                       data-bs-toggle="dropdown"
+                       href="#" role="button">⚙️ Settings</a>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <a class="dropdown-item" href="/account">👤 Account</a>
+                        <a class="dropdown-item" href="/organization">🏢 Organization</a>
+                        <a class="dropdown-item" href="/users">👥 Users</a>
+                        <a class="dropdown-item" href="/groups">🤝 Groups</a>
+                        <a class="dropdown-item" href="/roles">🪪 Roles</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="/logout">⏻ Logout</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
